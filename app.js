@@ -2,6 +2,12 @@ const form = document.querySelector("#predictionForm");
 const tabs = document.querySelectorAll(".tab");
 const panels = document.querySelectorAll(".tab-panel");
 const sampleBtn = document.querySelector("#sampleBtn");
+const saveBtn = document.querySelector("#saveBtn");
+const exportBtn = document.querySelector("#exportBtn");
+const copyCsvBtn = document.querySelector("#copyCsvBtn");
+const clearBtn = document.querySelector("#clearBtn");
+const storageKey = "hfpef-screening-registry";
+let latestResult = null;
 
 const $ = (name) => form.elements[name];
 const value = (name) => {
@@ -204,6 +210,7 @@ function render(changed) {
   };
   const combined = combinedModel(parts);
   const [cat, action, tone] = category(combined);
+  latestResult = { parts, combined, category: cat };
 
   document.querySelector("#h2fpefScore").textContent = parts.h2.score;
   document.querySelector("#abaProbability").textContent = Math.round(parts.aba.probability * 100);
@@ -223,6 +230,152 @@ function render(changed) {
     explainRow("HFpEF-ABA", parts.aba.probability) +
     explainRow("HFA-PEFF", parts.hfa.probability) +
     explainRow("BREATH2", parts.br.probability);
+}
+
+function registry() {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function setRegistry(rows) {
+  localStorage.setItem(storageKey, JSON.stringify(rows));
+}
+
+function currentPayload() {
+  const now = new Date();
+  return {
+    registeredAt: now.toISOString(),
+    registeredAtLabel: now.toLocaleString("ja-JP"),
+    age: value("age"),
+    sex: $("sex").value,
+    bmi: value("bmi"),
+    af: checked("af"),
+    cad: checked("cad"),
+    bnp: value("bnp"),
+    ntprobnp: value("ntprobnp"),
+    eePrime: value("eePrime"),
+    pasp: value("pasp"),
+    lavi: value("lavi"),
+    lvmi: value("lvmi"),
+    h2fpefScore: latestResult.parts.h2.score,
+    hfpefAbaProbability: latestResult.parts.aba.probability,
+    hfaPeffScore: latestResult.parts.hfa.score,
+    breath2Score: latestResult.parts.br.score,
+    combinedRisk: latestResult.combined,
+    category: latestResult.category,
+  };
+}
+
+function renderRegistry() {
+  const rows = registry();
+  const tbody = document.querySelector("#registryRows");
+  const count = rows.length;
+  const average = count ? rows.reduce((sum, row) => sum + row.combinedRisk, 0) / count : 0;
+  const high = rows.filter((row) => row.combinedRisk >= 0.65).length;
+
+  document.querySelector("#caseCount").textContent = count;
+  document.querySelector("#averageRisk").textContent = `${Math.round(average * 100)}%`;
+  document.querySelector("#highRiskCount").textContent = high;
+
+  if (!count) {
+    tbody.innerHTML = '<tr><td colspan="9">まだ登録データはありません。</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows
+    .slice()
+    .reverse()
+    .map((row) => `
+      <tr>
+        <td>${row.registeredAtLabel}</td>
+        <td>${row.age}</td>
+        <td>${row.sex === "female" ? "女性" : "男性"}</td>
+        <td>${row.h2fpefScore}</td>
+        <td>${Math.round(row.hfpefAbaProbability * 100)}%</td>
+        <td>${row.hfaPeffScore}</td>
+        <td>${row.breath2Score}</td>
+        <td>${Math.round(row.combinedRisk * 100)}%</td>
+        <td>${row.category}</td>
+      </tr>
+    `)
+    .join("");
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function registryCsv() {
+  const rows = registry();
+  const headers = [
+    "registeredAt",
+    "age",
+    "sex",
+    "bmi",
+    "af",
+    "cad",
+    "bnp",
+    "ntprobnp",
+    "eePrime",
+    "pasp",
+    "lavi",
+    "lvmi",
+    "h2fpefScore",
+    "hfpefAbaProbability",
+    "hfaPeffScore",
+    "breath2Score",
+    "combinedRisk",
+    "category",
+  ];
+  return [
+    headers.join(","),
+    ...rows.map((row) => headers.map((header) => csvEscape(row[header])).join(",")),
+  ].join("\r\n");
+}
+
+function showCsv() {
+  const csv = registryCsv();
+  document.querySelector("#csvPreview").value = csv;
+  return csv;
+}
+
+function exportCsv() {
+  const rows = registry();
+  if (!rows.length) {
+    window.alert("登録データがまだありません。先に左側の「登録」ボタンを押してください。");
+    return;
+  }
+  const csv = showCsv();
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `hfpef-screening-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function copyCsv() {
+  const rows = registry();
+  if (!rows.length) {
+    window.alert("登録データがまだありません。先に左側の「登録」ボタンを押してください。");
+    return;
+  }
+  const csv = showCsv();
+  try {
+    await navigator.clipboard.writeText(csv);
+    copyCsvBtn.textContent = "コピー済み";
+  } catch {
+    document.querySelector("#csvPreview").select();
+    copyCsvBtn.textContent = "表示しました";
+  }
+  window.setTimeout(() => {
+    copyCsvBtn.textContent = "CSVコピー";
+  }, 1200);
 }
 
 tabs.forEach((tab) => {
@@ -266,4 +419,26 @@ sampleBtn.addEventListener("click", () => {
   render("sample");
 });
 
+saveBtn.addEventListener("click", () => {
+  const rows = registry();
+  rows.push(currentPayload());
+  setRegistry(rows);
+  renderRegistry();
+  saveBtn.textContent = "登録済み";
+  window.setTimeout(() => {
+    saveBtn.textContent = "登録";
+  }, 1200);
+});
+
+exportBtn.addEventListener("click", exportCsv);
+copyCsvBtn.addEventListener("click", copyCsv);
+
+clearBtn.addEventListener("click", () => {
+  if (!window.confirm("登録データをすべて削除しますか？")) return;
+  setRegistry([]);
+  renderRegistry();
+  document.querySelector("#csvPreview").value = "";
+});
+
 render();
+renderRegistry();

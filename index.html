@@ -28,6 +28,7 @@
               <p id="combinedAction" class="small">
                 追加検査や専門医紹介を検討する層です。
               </p>
+              <button type="button" id="saveBtn" class="primary">登録</button>
             </div>
           </div>
 
@@ -60,6 +61,7 @@
             <button type="button" class="tab active" data-tab="patient">患者情報</button>
             <button type="button" class="tab" data-tab="echo">心エコー</button>
             <button type="button" class="tab" data-tab="model">統合モデル</button>
+            <button type="button" class="tab" data-tab="registry">登録データ</button>
           </div>
 
           <form id="predictionForm">
@@ -204,6 +206,60 @@
                 <h3>モデル出力の内訳</h3>
                 <div id="modelExplain"></div>
               </div>
+            </section>
+
+            <section class="tab-panel" id="registry">
+              <div class="section-head">
+                <h2>登録データ</h2>
+                <div class="actions">
+                  <button type="button" id="exportBtn" class="ghost">CSV出力</button>
+                  <button type="button" id="copyCsvBtn" class="ghost">CSVコピー</button>
+                  <button type="button" id="clearBtn" class="ghost danger">全削除</button>
+                </div>
+              </div>
+
+              <div class="analytics">
+                <div>
+                  <span id="caseCount">0</span>
+                  <p>登録件数</p>
+                </div>
+                <div>
+                  <span id="averageRisk">0%</span>
+                  <p>平均統合リスク</p>
+                </div>
+                <div>
+                  <span id="highRiskCount">0</span>
+                  <p>高リスク件数</p>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>登録日時</th>
+                      <th>年齢</th>
+                      <th>性別</th>
+                      <th>H2FPEF</th>
+                      <th>ABA</th>
+                      <th>HFA-PEFF</th>
+                      <th>BREATH2</th>
+                      <th>統合</th>
+                      <th>分類</th>
+                    </tr>
+                  </thead>
+                  <tbody id="registryRows">
+                    <tr>
+                      <td colspan="9">まだ登録データはありません。</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <label class="csv-box">
+                CSVプレビュー
+                <textarea id="csvPreview" readonly rows="8" placeholder="登録後にCSV出力またはCSVコピーを押すと表示されます。"></textarea>
+              </label>
             </section>
           </form>
         </section>
