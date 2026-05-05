@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HFpEF Prediction Console</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="HFpEF prediction app">
+        <aside class="side">
+          <div>
+            <p class="eyebrow">HFpEF Prediction</p>
+            <h1>HFpEF統合予測</h1>
+            <p class="subcopy">
+              H2FPEF、HFpEF-ABA、HFA-PEFF、BREATH2を同時に計算し、統合リスクを推定します。
+            </p>
+          </div>
+
+          <div class="result-panel">
+            <div class="risk-ring" id="riskRing" style="--risk: 0.35">
+              <span id="combinedRisk">35%</span>
+            </div>
+            <div>
+              <p class="label">統合HFpEF予測</p>
+              <h2 id="combinedCategory">中間リスク</h2>
+              <p id="combinedAction" class="small">
+                追加検査や専門医紹介を検討する層です。
+              </p>
+            </div>
+          </div>
+
+          <dl class="score-list">
+            <div>
+              <dt>H2FPEF</dt>
+              <dd><span id="h2fpefScore">0</span>/9</dd>
+            </div>
+            <div>
+              <dt>HFpEF-ABA</dt>
+              <dd><span id="abaProbability">0</span>%</dd>
+            </div>
+            <div>
+              <dt>HFA-PEFF</dt>
+              <dd><span id="hfaPeffScore">0</span>/6</dd>
+            </div>
+            <div>
+              <dt>BREATH2</dt>
+              <dd><span id="breath2Score">0</span>/9</dd>
+            </div>
+          </dl>
+
+          <p class="disclaimer">
+            研究・プロトタイプ用です。診断、治療方針、紹介判断は医師の臨床判断と施設の基準に従ってください。
+          </p>
+        </aside>
+
+        <section class="content">
+          <div class="toolbar">
+            <button type="button" class="tab active" data-tab="patient">患者情報</button>
+            <button type="button" class="tab" data-tab="echo">心エコー</button>
+            <button type="button" class="tab" data-tab="model">統合モデル</button>
+          </div>
+
+          <form id="predictionForm">
+            <section class="tab-panel active" id="patient">
+              <div class="section-head">
+                <h2>患者情報・検査</h2>
+                <button type="button" id="sampleBtn" class="ghost">サンプル入力</button>
+              </div>
+
+              <div class="grid">
+                <label>
+                  年齢
+                  <input name="age" type="number" min="18" max="110" step="1" value="72" />
+                </label>
+                <label>
+                  性別
+                  <select name="sex">
+                    <option value="female">女性</option>
+                    <option value="male">男性</option>
+                  </select>
+                </label>
+                <label>
+                  身長 cm
+                  <input name="height" type="number" min="120" max="220" step="0.1" value="158" />
+                </label>
+                <label>
+                  体重 kg
+                  <input name="weight" type="number" min="30" max="220" step="0.1" value="72" />
+                </label>
+                <label>
+                  BMI kg/m2
+                  <input name="bmi" type="number" min="10" max="70" step="0.1" value="28.8" />
+                </label>
+                <label>
+                  抗高血圧薬数
+                  <input name="antihypertensives" type="number" min="0" max="8" step="1" value="2" />
+                </label>
+                <label>
+                  BNP pg/mL
+                  <input name="bnp" type="number" min="0" max="5000" step="1" value="95" />
+                </label>
+                <label>
+                  NT-proBNP pg/mL
+                  <input name="ntprobnp" type="number" min="0" max="20000" step="1" value="480" />
+                </label>
+                <label>
+                  Hb g/dL
+                  <input name="hemoglobin" type="number" min="3" max="22" step="0.1" value="11.8" />
+                </label>
+                <label>
+                  心胸郭比 %
+                  <input name="ctr" type="number" min="20" max="90" step="1" value="52" />
+                </label>
+                <label>
+                  RV5 + SV1 mm
+                  <input name="lvVoltage" type="number" min="0" max="80" step="1" value="38" />
+                </label>
+              </div>
+
+              <div class="checks">
+                <label><input name="af" type="checkbox" checked /> 発作性または持続性心房細動</label>
+                <label><input name="cad" type="checkbox" /> 冠動脈疾患あり</label>
+              </div>
+            </section>
+
+            <section class="tab-panel" id="echo">
+              <div class="section-head">
+                <h2>心エコー指標</h2>
+                <p class="hint">未入力の項目は0点扱いです。</p>
+              </div>
+
+              <div class="grid">
+                <label>
+                  E/e'
+                  <input name="eePrime" type="number" min="0" max="60" step="0.1" value="13" />
+                </label>
+                <label>
+                  PASP mmHg
+                  <input name="pasp" type="number" min="0" max="120" step="1" value="42" />
+                </label>
+                <label>
+                  TR Vmax m/s
+                  <input name="trVmax" type="number" min="0" max="6" step="0.1" value="3.0" />
+                </label>
+                <label>
+                  Septal e' cm/s
+                  <input name="septalE" type="number" min="0" max="30" step="0.1" value="5.8" />
+                </label>
+                <label>
+                  Lateral e' cm/s
+                  <input name="lateralE" type="number" min="0" max="30" step="0.1" value="8.4" />
+                </label>
+                <label>
+                  GLS %
+                  <input name="gls" type="number" min="0" max="35" step="0.1" value="15" />
+                </label>
+                <label>
+                  LAVI mL/m2
+                  <input name="lavi" type="number" min="0" max="150" step="1" value="42" />
+                </label>
+                <label>
+                  LVMI g/m2
+                  <input name="lvmi" type="number" min="0" max="250" step="1" value="118" />
+                </label>
+                <label>
+                  RWT
+                  <input name="rwt" type="number" min="0" max="1" step="0.01" value="0.44" />
+                </label>
+                <label>
+                  LV壁厚 mm
+                  <input name="wallThickness" type="number" min="0" max="30" step="0.1" value="12" />
+                </label>
+              </div>
+            </section>
+
+            <section class="tab-panel" id="model">
+              <div class="section-head">
+                <h2>統合モデル</h2>
+                <p class="hint">実データ学習前の暫定メタモデルです。係数はあとで置換できます。</p>
+              </div>
+
+              <div class="model-grid">
+                <label>
+                  H2FPEF重み
+                  <input name="wH2" type="range" min="0" max="3" step="0.1" value="1.2" />
+                </label>
+                <label>
+                  HFpEF-ABA重み
+                  <input name="wAba" type="range" min="0" max="3" step="0.1" value="1.0" />
+                </label>
+                <label>
+                  HFA-PEFF重み
+                  <input name="wHfa" type="range" min="0" max="3" step="0.1" value="1.4" />
+                </label>
+                <label>
+                  BREATH2重み
+                  <input name="wBreath" type="range" min="0" max="3" step="0.1" value="1.0" />
+                </label>
+              </div>
+
+              <div class="explain">
+                <h3>モデル出力の内訳</h3>
+                <div id="modelExplain"></div>
+              </div>
+            </section>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
